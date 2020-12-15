@@ -17,12 +17,10 @@ def download_images(url, filename):
 def download_comic_img():
     url = "http://xkcd.com/614/info.0.json"
     response = requests.get(url)
-    response.raise_for_status()
     comic_info = response.json()
     random_id = random.randint(0, comic_info["num"])
     random_img_url = f"http://xkcd.com/{random_id}/info.0.json"
     response = requests.get(random_img_url)
-    response.raise_for_status()
     img_irl = response.json()['img']
     filename = f"comic{random_id}{os.path.splitext(img_irl)[1]}"
     download_images(img_irl, filename)
@@ -35,7 +33,6 @@ def get_upload_url(group_id, token):
                "access_token": token,
                "v": 5.126}
     response = requests.post(url1, params=payload)
-    response.raise_for_status()
     upload_url = response.json()['response']['upload_url']
     return upload_url
 
@@ -49,12 +46,11 @@ def get_img_info(group_id, upload_info, token):
                "access_token": token,
                "v": 5.126}
     response = requests.post(save_url, params=payload)
-    response.raise_for_status()
     img_info = response.json()["response"][0]
     return img_info
 
 
-def publication_comic(group_id, img_info, comic_info, token):
+def publishes_comic(group_id, img_info, comic_info, token):
     publication_url = "https://api.vk.com/method/wall.post"
     payload = {"owner_id": int(f"-{group_id}"),
                "from_group": 1,
@@ -62,8 +58,7 @@ def publication_comic(group_id, img_info, comic_info, token):
                "message": comic_info["alt"],
                "access_token": token,
                "v": 5.126}
-    response = requests.post(publication_url, params=payload)
-    response.raise_for_status()
+    requests.post(publication_url, params=payload)
 
 
 def main():
@@ -72,27 +67,18 @@ def main():
     parser.add_argument('--token', help='Ваш access_token')
     args = parser.parse_args()
     load_dotenv()
-    if args.group_id:
-        group_id = args.group_id
-    else:
-        group_id = os.environ["VK_GROUP_ID"]
-    if args.token:
-        token = args.token
-    else:
-        token = os.environ["VK_TOKEN"]
+    group_id = args.group_id or os.environ["VK_GROUP_ID"]
+    token = args.token or os.environ["VK_TOKEN"]
     comic_info, filename = download_comic_img()
     try:
         upload_url = get_upload_url(group_id, token)
         with open(filename, 'rb') as file:
             files = {'photo': file}
             response = requests.post(upload_url, files=files)
-            response.raise_for_status()
             upload_info = response.json()
         img_info = get_img_info(group_id, upload_info, token)
-        publication_comic(group_id, img_info, comic_info, token)
-        path_to_comic = Path.cwd() / filename
-        Path.unlink(path_to_comic)
-    except ValueError:
+        publishes_comic(group_id, img_info, comic_info, token)
+    finally:
         path_to_comic = Path.cwd() / filename
         Path.unlink(path_to_comic)
 
