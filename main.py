@@ -4,6 +4,13 @@ from dotenv import load_dotenv
 import random
 import argparse
 from pathlib import Path
+import logging
+
+
+def detect_error(api_answer):
+    if "error" in api_answer:
+        logging.warning(f' {api_answer["error"]["error_msg"]}')
+        os.abort()
 
 
 def download_images(url, filename):
@@ -33,6 +40,7 @@ def get_upload_url(group_id, token):
                "access_token": token,
                "v": 5.126}
     response = requests.post(url1, params=payload)
+    detect_error(response.json())
     upload_url = response.json()['response']['upload_url']
     return upload_url
 
@@ -46,6 +54,7 @@ def get_img_info(group_id, upload_info, token):
                "access_token": token,
                "v": 5.126}
     response = requests.post(save_url, params=payload)
+    detect_error(response.json())
     img_info = response.json()["response"][0]
     return img_info
 
@@ -58,7 +67,8 @@ def publishes_comic(group_id, img_info, comic_info, token):
                "message": comic_info["alt"],
                "access_token": token,
                "v": 5.126}
-    requests.post(publication_url, params=payload)
+    response = requests.post(publication_url, params=payload)
+    detect_error(response.json())
 
 
 def main():
