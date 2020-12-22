@@ -10,7 +10,7 @@ import logging
 def detect_error(api_answer):
     if "error" in api_answer:
         logging.warning(f' {api_answer["error"]["error_msg"]}')
-        os.abort()
+        raise Exception("Произошла ошибка API VK")
 
 
 def download_images(url, filename):
@@ -40,8 +40,9 @@ def get_upload_url(group_id, token):
                "access_token": token,
                "v": 5.126}
     response = requests.post(url1, params=payload)
-    detect_error(response.json())
-    upload_url = response.json()['response']['upload_url']
+    api_answer = response.json()
+    detect_error(api_answer)
+    upload_url = api_answer['response']['upload_url']
     return upload_url
 
 
@@ -54,8 +55,9 @@ def get_img_info(group_id, upload_info, token):
                "access_token": token,
                "v": 5.126}
     response = requests.post(save_url, params=payload)
-    detect_error(response.json())
-    img_info = response.json()["response"][0]
+    api_answer = response.json()
+    detect_error(api_answer)
+    img_info = api_answer["response"][0]
     return img_info
 
 
